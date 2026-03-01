@@ -24,6 +24,6 @@ func InitRoutes(
 		if sess.Values["user_id"] != nil {
 			return c.Redirect(http.StatusSeeOther, "/dashboard")
 		}
-		return c.Redirect(http.StatusSeeOther, "/login")
+		return c.Redirect(http.StatusSeeOther, "/register")
 	})
 }

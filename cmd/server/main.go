@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"html/template"
@@ -58,6 +58,5 @@ func main() {
 
 	webAdapter.InitRoutes(e, authHandler)
 
-	address := env.GetString("ADDRESS", "127.0.0.2:8080")
-	e.Logger.Fatal(e.Start(address))
+	e.Logger.Fatal(e.Start(":8080"))
 }
