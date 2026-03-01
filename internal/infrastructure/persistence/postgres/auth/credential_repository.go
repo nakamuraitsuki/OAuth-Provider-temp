@@ -19,7 +19,7 @@ type sqlCredentialRepository struct {
 	db *sqlx.DB
 }
 
-func NewSQLCredentialRepository(db *sqlx.DB) auth.Repository {
+func NewCredentialRepository(db *sqlx.DB) auth.Repository {
 	return &sqlCredentialRepository{db: db}
 }
 
