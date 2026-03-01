@@ -18,11 +18,7 @@ type userModel struct {
 
 // toEntity はDBモデルをドメインエンティティに変換し
 func (m *userModel) toEntity() *user.User {
-	return &user.User{
-		ID:          m.ID,
-		Username:    m.Username,
-		DisplayName: m.DisplayName,
-	}
+	return user.NewUser(m.ID, m.Username, m.DisplayName)
 }
 
 type userRepository struct {
@@ -42,9 +38,9 @@ func (r *userRepository) Save(ctx context.Context, u *user.User) error {
 			display_name = EXCLUDED.display_name
 	`
 	_, err := r.db.NamedExecContext(ctx, query, userModel{
-		ID:          u.ID,
-		Username:    u.Username,
-		DisplayName: u.DisplayName,
+		ID:          u.ID(),
+		Username:    u.Username(),
+		DisplayName: u.DisplayName(),
 	})
 	return err
 }

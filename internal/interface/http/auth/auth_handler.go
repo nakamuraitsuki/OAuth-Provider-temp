@@ -79,8 +79,8 @@ func (h *AuthHandler) Dashboard(c echo.Context) error {
 	}
 
 	res := UserResponse{
-		ID:          user.ID,
-		DisplayName: user.DisplayName,
+		ID:          user.ID(),
+		DisplayName: user.DisplayName(),
 	}
 
 	return c.Render(http.StatusOK, "dashboard.html", map[string]interface{}{

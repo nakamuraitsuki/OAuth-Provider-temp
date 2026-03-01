@@ -33,10 +33,7 @@ func (r *sqlCredentialRepository) FindByUserID(ctx context.Context, userID strin
 		return nil, err
 	}
 
-	return &auth.PasswordCredential{
-		UserID:       m.UserID,
-		PasswordHash: m.PasswordHash,
-	}, nil
+	return auth.NewPasswordCredential(m.UserID, m.PasswordHash), nil
 }
 
 func (r *sqlCredentialRepository) Save(ctx context.Context, cred *auth.PasswordCredential) error {
@@ -48,8 +45,8 @@ func (r *sqlCredentialRepository) Save(ctx context.Context, cred *auth.PasswordC
 	`
 
 	_, err := r.db.NamedExecContext(ctx, query, credentialModel{
-		UserID:       cred.UserID,
-		PasswordHash: cred.PasswordHash,
+		UserID:       cred.UserID(),
+		PasswordHash: cred.PasswordHash(),
 	})
 
 	return err

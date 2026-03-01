@@ -43,14 +43,14 @@ func (i *authInteractor) Authenticate(ctx context.Context, input AuthInput) (*us
 	}
 
 	// 2. Authドメイン: そのユーザーに紐づく認証情報（ハッシュ等）を取得
-	cred, err := i.credentialRepo.FindByUserID(ctx, usr.ID)
+	cred, err := i.credentialRepo.FindByUserID(ctx, usr.ID())
 	if err != nil {
 		return nil, errors.New("invalid username or password")
 	}
 
 	// 3. Authドメイン(Service): パスワードが一致するか検証
 	// エンティティではなく Service に任せることで計算ロジックを分離
-	ok, err := i.passwordService.Verify(ctx, input.Password, cred.PasswordHash)
+	ok, err := i.passwordService.Verify(ctx, input.Password, cred.PasswordHash())
 	if err != nil || !ok {
 		return nil, errors.New("invalid username or password")
 	}
