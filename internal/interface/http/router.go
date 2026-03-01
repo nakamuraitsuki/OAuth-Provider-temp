@@ -12,6 +12,8 @@ func InitRoutes(
 	e *echo.Echo,
 	authHandler *auth.AuthHandler,
 ) {
+	e.GET("/register", authHandler.ShowRegister)
+	e.POST("/register", authHandler.Register)
 	e.GET("/login", authHandler.ShowLogin)
 	e.POST("/login", authHandler.Login)
 	e.GET("/dashboard", authHandler.Dashboard)

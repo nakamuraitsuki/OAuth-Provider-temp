@@ -25,6 +25,37 @@ func NewAuthHandler(
 	}
 }
 
+// ShowRegister: GET /register
+func (h *AuthHandler) ShowRegister(c echo.Context) error {
+	return c.Render(http.StatusOK, "register.html", map[string]interface{}{
+		"Issuer": h.authUC.GetIssuer(),
+	})
+}
+
+// Register: POST /register
+func (h *AuthHandler) Register(c echo.Context) error {
+	var req struct {
+		Username    string `form:"username"`
+		Password    string `form:"password"`
+		DisplayName string `form:"display_name"`
+	}
+	if err := c.Bind(&req); err != nil {
+		return c.Redirect(http.StatusSeeOther, "/register?error=invalid_input")
+	}
+
+	err := h.authUC.Register(c.Request().Context(), auth.RegisterInput{
+		Username:    req.Username,
+		Password:    req.Password,
+		DisplayName: req.DisplayName,
+	})
+
+	if err != nil {
+		return c.Redirect(http.StatusSeeOther, "/register?error=conflict")
+	}
+
+	return c.Redirect(http.StatusSeeOther, "/login?registered=true")
+}
+
 // ShowLogin: GET /login
 func (h *AuthHandler) ShowLogin(c echo.Context) error {
 	return c.Render(http.StatusOK, "login.html", map[string]interface{}{
@@ -57,7 +88,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		SameSite: http.SameSiteLaxMode,
 	}
 
-	sess.Values["user_id"] = user.ID
+	sess.Values["user_id"] = user.ID().String()
 	if err := sess.Save(c.Request(), c.Response()); err != nil {
 		return err
 	}
