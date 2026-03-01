@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard | My OAuth Provider</title>
+    <style>
+        :root { --primary: #2563eb; --bg: #f1f5f9; }
+        body { font-family: system-ui, sans-serif; background: var(--bg); margin: 0; padding: 2rem; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 2rem; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f1f5f9; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+        .user-info { line-height: 1.6; }
+        .badge { background: #dcfce7; color: #166534; padding: 0.2rem 0.6rem; border-radius: 999px; font-size: 0.75rem; font-weight: bold; }
+        .logout { color: #64748b; text-decoration: none; font-size: 0.9rem; }
+        .logout:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <span class="badge">Authenticated Session</span>
+            <a href="/login" class="logout">Logout</a>
+        </div>
+        <div class="user-info">
+            <h2>Welcome, {{.User.DisplayName}}!</h2>
+            <p><strong>User ID:</strong> {{.User.ID}}</p>
+            <p>現在、<strong>127.0.0.2</strong> 上の認証プロバイダーに直接ログインしています。</p>
+        </div>
+        <div style="margin-top: 2rem; padding: 1rem; background: #fff7ed; border-radius: 8px; font-size: 0.9rem; color: #9a3412;">
+            次のPRでは、このセッションを利用して「認可コード」を発行し、外部アプリと連携する機能を実装。
+        </div>
+    </div>
+</body>
+</html>
