@@ -6,7 +6,7 @@ services:
     environment:
       - ADDRESS=0.0.0.0:8080
       - ISSUER_URL=http://127.0.0.2:8080
-      - DB_HOST=db
+      - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=password
@@ -14,17 +14,32 @@ services:
       - DB_SSLMODE=disable
       - COOKIE_SECRET=very-secret-string
     depends_on:
-      db:
+      postgres:
         condition: service_healthy
+    networks:
+      - internal
 
-  db:
-    image: library/postgres:16-alpine
+  postgres:
+    image: postgres:16-alpine
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=password
       - POSTGRES_DB=oauth_db
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # cf. https://hub.docker.com/_/postgres#initialization-scripts
+      - ./deployments/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
       interval: 5s
       timeout: 5s
       retries: 5
+    networks:
+      - internal
+
+networks:
+  internal:
+    driver: bridge
+
+volumes:
+  pgdata:

@@ -42,6 +42,10 @@ func (i *authInteractor) Authenticate(ctx context.Context, input AuthInput) (*us
 		return nil, errors.New("invalid username or password")
 	}
 
+	if usr == nil {
+		return nil, errors.New("invalid username or password")
+	}
+
 	cred, err := i.credentialRepo.FindByUserID(ctx, usr.ID())
 	if err != nil {
 		return nil, errors.New("invalid username or password")
