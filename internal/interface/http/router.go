@@ -16,6 +16,7 @@ func InitRoutes(
 	e.POST("/register", authHandler.Register)
 	e.GET("/login", authHandler.ShowLogin)
 	e.POST("/login", authHandler.Login)
+	e.POST("/logout", authHandler.Logout)
 	e.GET("/dashboard", authHandler.Dashboard)
 
 	// ログイン状態によるリダイレクト分岐

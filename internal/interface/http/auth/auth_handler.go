@@ -67,7 +67,7 @@ func (h *AuthHandler) ShowLogin(c echo.Context) error {
 func (h *AuthHandler) Login(c echo.Context) error {
 	var req LoginRequest
 	if err := c.Bind(&req); err != nil {
-		return c.Redirect(http.StatusSeeOther, "login?error=invalid_input")
+		return c.Redirect(http.StatusSeeOther, "/login?error=invalid_input")
 	}
 
 	user, err := h.authUC.Authenticate(c.Request().Context(), auth.AuthInput{
@@ -76,7 +76,7 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	})
 
 	if err != nil {
-		return c.Redirect(http.StatusSeeOther, "login?error=unauthorized")
+		return c.Redirect(http.StatusSeeOther, "/login?error=unauthorized")
 	}
 
 	sess, _ := session.Get("session", c)
@@ -96,17 +96,33 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	return c.Redirect(http.StatusSeeOther, "/dashboard")
 }
 
+// Logout: POST /logout
+func (h *AuthHandler) Logout(c echo.Context) error {
+	sess, _ := session.Get("session", c)
+	
+	// セッションの中身を空にする、あるいはオプションで有効期限をマイナスにする
+	sess.Options.MaxAge = -1
+	sess.Values = make(map[interface{}]interface{})
+	
+	if err := sess.Save(c.Request(), c.Response()); err != nil {
+		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to logout")
+	}
+
+	// ログイン画面やトップページへリダイレクト
+	return c.Redirect(http.StatusSeeOther, "/register")
+}
+
 // Dashboard: GET /dashboard
 func (h *AuthHandler) Dashboard(c echo.Context) error {
 	sess, _ := session.Get("session", c)
 	userID, ok := sess.Values["user_id"].(string)
 	if !ok {
-		return c.Redirect(http.StatusSeeOther, "/login")
+		return c.Redirect(http.StatusSeeOther, "/register")
 	}
 
 	user, err := h.userUC.GetProfile(c.Request().Context(), userID)
 	if err != nil {
-		return c.Redirect(http.StatusSeeOther, "/login")
+		return c.Redirect(http.StatusSeeOther, "/register")
 	}
 
 	res := UserResponse{
