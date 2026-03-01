@@ -6,12 +6,13 @@ import (
 	"errors"
 
 	"example.com/m/internal/domain/auth"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
 type credentialModel struct {
-	UserID       string `db:"user_id"`
-	PasswordHash string `db:"password_hash"`
+	UserID       uuid.UUID `db:"user_id"`
+	PasswordHash string    `db:"password_hash"`
 }
 
 type sqlCredentialRepository struct {
@@ -22,7 +23,7 @@ func NewSQLCredentialRepository(db *sqlx.DB) auth.Repository {
 	return &sqlCredentialRepository{db: db}
 }
 
-func (r *sqlCredentialRepository) FindByUserID(ctx context.Context, userID string) (*auth.PasswordCredential, error) {
+func (r *sqlCredentialRepository) FindByUserID(ctx context.Context, userID uuid.UUID) (*auth.PasswordCredential, error) {
 	var m credentialModel
 	query := `SELECT user_id, password_hash FROM credentials WHERE user_id = $1`
 

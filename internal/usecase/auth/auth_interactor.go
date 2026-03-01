@@ -6,6 +6,7 @@ import (
 
 	"example.com/m/internal/domain/auth"
 	"example.com/m/internal/domain/user"
+	"github.com/google/uuid"
 )
 
 type authInteractor struct {
@@ -35,28 +36,45 @@ type AuthInput struct {
 }
 
 func (i *authInteractor) Authenticate(ctx context.Context, input AuthInput) (*user.User, error) {
-	// 1. Userドメイン: ユーザー名からユーザーを特定
 	usr, err := i.userRepo.FindByUsername(ctx, input.Username)
 	if err != nil {
 		// セキュリティ上、ユーザーが存在しない場合も「認証失敗」として扱う
 		return nil, errors.New("invalid username or password")
 	}
 
-	// 2. Authドメイン: そのユーザーに紐づく認証情報（ハッシュ等）を取得
 	cred, err := i.credentialRepo.FindByUserID(ctx, usr.ID())
 	if err != nil {
 		return nil, errors.New("invalid username or password")
 	}
 
-	// 3. Authドメイン(Service): パスワードが一致するか検証
-	// エンティティではなく Service に任せることで計算ロジックを分離
 	ok, err := i.passwordService.Verify(ctx, input.Password, cred.PasswordHash())
 	if err != nil || !ok {
 		return nil, errors.New("invalid username or password")
 	}
 
-	// 4. 認証成功。呼び出し元（Handler）はこれを受けてセッションを焼く
 	return usr, nil
+}
+
+type RegisterInput struct {
+	Username    string
+	DisplayName string
+	Password    string
+}
+
+func (i *authInteractor) Register(ctx context.Context, input RegisterInput) error {
+	usr := user.NewUser(uuid.New(), input.Username, input.DisplayName)
+	if err := i.userRepo.Save(ctx, usr); err != nil {
+		return err
+	}
+
+	// 2. パスワードのハッシュ化と保存
+	hash, err := i.passwordService.Hash(ctx, input.Password)
+	if err != nil {
+		return err
+	}
+
+	cred := auth.NewPasswordCredential(usr.ID(), hash)
+	return i.credentialRepo.Save(ctx, cred)
 }
 
 func (i *authInteractor) GetIssuer() string {

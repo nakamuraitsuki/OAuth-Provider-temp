@@ -79,7 +79,7 @@ func (h *AuthHandler) Dashboard(c echo.Context) error {
 	}
 
 	res := UserResponse{
-		ID:          user.ID(),
+		ID:          user.ID().String(),
 		DisplayName: user.DisplayName(),
 	}
 

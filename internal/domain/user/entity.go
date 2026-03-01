@@ -1,13 +1,15 @@
 package user
 
+import "github.com/google/uuid"
+
 // User は認証の主体を表すエンティティ。
 type User struct {
-	id           string
+	id           uuid.UUID
 	username     string
 	displayName  string
 }
 
-func NewUser(id, username, displayName string) *User {
+func NewUser(id uuid.UUID, username, displayName string) *User {
 	return &User{
 		id:          id,
 		username:    username,
@@ -15,7 +17,7 @@ func NewUser(id, username, displayName string) *User {
 	}
 }
 
-func (u *User) ID() string {
+func (u *User) ID() uuid.UUID {
 	return u.id
 }
 

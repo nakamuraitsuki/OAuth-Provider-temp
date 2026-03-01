@@ -6,14 +6,15 @@ import (
 	"errors"
 
 	"example.com/m/internal/domain/user"
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 )
 
 // userModel はDBのテーブル構造を定義する内部的な構造体（DTO）
 type userModel struct {
-	ID          string `db:"id"`
-	Username    string `db:"username"`
-	DisplayName string `db:"display_name"`
+	ID          uuid.UUID `db:"id"`
+	Username    string    `db:"username"`
+	DisplayName string    `db:"display_name"`
 }
 
 // toEntity はDBモデルをドメインエンティティに変換し
@@ -45,7 +46,7 @@ func (r *userRepository) Save(ctx context.Context, u *user.User) error {
 	return err
 }
 
-func (r *userRepository) FindByID(ctx context.Context, id string) (*user.User, error) {
+func (r *userRepository) FindByID(ctx context.Context, id uuid.UUID) (*user.User, error) {
 	var m userModel
 	query := "SELECT id, username, display_name FROM users WHERE id = $1"
 	if err := r.db.GetContext(ctx, &m, query, id); err != nil {

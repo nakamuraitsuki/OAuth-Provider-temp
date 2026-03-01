@@ -8,5 +8,6 @@ import (
 
 type AuthUseCase interface {
 	Authenticate(ctx context.Context, input AuthInput) (*user.User, error)
+	Register(ctx context.Context, input RegisterInput) error
 	GetIssuer() string
 }
