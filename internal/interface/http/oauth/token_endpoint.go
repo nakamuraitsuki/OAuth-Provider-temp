@@ -95,12 +95,15 @@ func (h *OauthHandler) TokenEndpoint(c echo.Context) error {
 		TokenType    string `json:"token_type"`
 		ExpiresIn    int64  `json:"expires_in"`
 		RefreshToken string `json:"refresh_token,omitempty"` // Refresh Token は、もし発行される場合のみ返す
+		IDToken      string `json:"id_token,omitempty"`      // OIDC の ID Token も、もし発行される場合のみ返す
 	}
+	
 	res.AccessToken = output.AccessToken
 	res.TokenType = output.TokenType
 	res.ExpiresIn = output.ExpiresIn
-	if output.RefreshToken != "" {
-		res.RefreshToken = output.RefreshToken
+	res.RefreshToken = output.RefreshToken
+	if output.IDToken != "" {
+		res.IDToken = output.IDToken
 	}
 	return c.JSON(http.StatusOK, res)
 }

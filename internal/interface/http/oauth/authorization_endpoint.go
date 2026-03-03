@@ -37,6 +37,7 @@ func (h *OauthHandler) AuthorizationGETEndpoint(c echo.Context) error {
 		RedirectURI:  c.QueryParam("redirect_uri"),
 		Scope:        requestedScopes,
 		State:        c.QueryParam("state"),
+		Nonce:        c.QueryParam("nonce"), // OIDC で追加されたパラメータ
 		// 対話によるユーザ認証の結果は、クエリパラメータではなく、クッキーなどから取得するのが適切
 	}
 
@@ -56,6 +57,7 @@ func (h *OauthHandler) AuthorizationGETEndpoint(c echo.Context) error {
 		"Scope":        req.Scope,
 		"State":        req.State,
 		"UserID":       userID,
+		"Nonce":        req.Nonce,
 	})
 }
 
