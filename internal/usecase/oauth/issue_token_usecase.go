@@ -3,9 +3,13 @@ package oauth
 import (
 	"context"
 	"errors"
+	"slices"
 	"time"
 
 	"example.com/m/internal/domain/oauth"
+	"example.com/m/internal/domain/oauth/value"
+	"example.com/m/internal/domain/oidc"
+	"example.com/m/internal/domain/user"
 	"github.com/google/uuid"
 )
 
@@ -15,38 +19,53 @@ var (
 	ErrUnsupportedGrantType = errors.New("unsupported_grant_type")
 )
 
-// [RFC 6749 Section 4.1.4] Access Token Response
-// 具体例の時間をそのまま流用
-const AccessTokenExpirationTime = 1 * time.Hour
+const (
+	// [RFC 6749 Section 4.1.4] Access Token Response
+	// 具体例の時間をそのまま流用
+	AccessTokenExpirationTime = 1 * time.Hour
+
+	// ID Token の有効期限
+	IDTokenExpirationTime = 1 * time.Hour
+)
 
 type IssueTokenUseCase interface {
 	Execute(ctx context.Context, req IssueTokenInput) (*IssueTokenOutput, error)
 }
 
 type issueTokenInteractor struct {
-	clientRepo oauth.ClientRepository
-	codeRepo   oauth.AuthorizationCodeRepository
-	tokenRepo  oauth.TokenRepository
-	hasher     oauth.SecretHashService
-	tokenGen   oauth.TokenGenerator
+	userRepo      user.Repository
+	clientRepo    oauth.ClientRepository
+	codeRepo      oauth.AuthorizationCodeRepository
+	tokenRepo     oauth.TokenRepository
+	hasher        oauth.SecretHashService
+	tokenGen      oauth.TokenGenerator
 	codeValidator oauth.CodeValidator
+
+	identityService oidc.IdentityService
+	issuer          string
 }
 
 func NewIssueTokenInteractor(
+	userRepo user.Repository,
 	clientRepo oauth.ClientRepository,
 	codeRepo oauth.AuthorizationCodeRepository,
 	tokenRepo oauth.TokenRepository,
 	hasher oauth.SecretHashService,
 	tokenGen oauth.TokenGenerator,
 	codeValidator oauth.CodeValidator,
+	identityService oidc.IdentityService,
+	issuer string,
 ) IssueTokenUseCase {
 	return &issueTokenInteractor{
-		clientRepo: clientRepo,
-		codeRepo:   codeRepo,
-		tokenRepo:  tokenRepo,
-		tokenGen:   tokenGen,
-		hasher:     hasher,
-		codeValidator: codeValidator,
+		userRepo:        userRepo,
+		clientRepo:      clientRepo,
+		codeRepo:        codeRepo,
+		tokenRepo:       tokenRepo,
+		tokenGen:        tokenGen,
+		hasher:          hasher,
+		codeValidator:   codeValidator,
+		identityService: identityService,
+		issuer:          issuer,
 	}
 }
 
@@ -68,6 +87,9 @@ type IssueTokenOutput struct {
 	TokenType    string
 	ExpiresIn    int64
 	RefreshToken string
+
+	// OIDC 用 ID Token
+	IDToken string
 	// more parameters can be added if needed
 }
 
@@ -100,7 +122,7 @@ func (i *issueTokenInteractor) Execute(ctx context.Context, req IssueTokenInput)
 		// ここで「もし削除済み（既に使用済み）なら関連トークンを Revoke する」ロジックを将来的に追加可能
 		return nil, ErrInvalidGrant
 	}
-  if err := i.codeValidator.Validate(ctx, req.Code, authCode); err != nil {
+	if err := i.codeValidator.Validate(ctx, req.Code, authCode); err != nil {
 		return nil, ErrInvalidGrant
 	}
 
@@ -135,10 +157,35 @@ func (i *issueTokenInteractor) Execute(ctx context.Context, req IssueTokenInput)
 		return nil, ErrServerError
 	}
 
+	// OIDC ロジック
+	var idTokenStr string
+	if slices.Contains(authCode.Scope(), value.ScopeOpenID) {
+		usr, err := i.userRepo.FindByID(ctx, authCode.UserID())
+		if err != nil {
+			return nil, ErrServerError
+		}
+
+		it := oidc.NewIDToken(
+			authCode.UserID().String(),
+			req.ClientID,
+			i.issuer,
+			authCode.Nonce(),
+			usr.Username(), // optional claim を追加
+			IDTokenExpirationTime,
+		)
+
+		signed, err := i.identityService.Sign(ctx, it)
+		if err != nil {
+			return nil, ErrServerError
+		}
+		idTokenStr = signed
+	}
+
 	return &IssueTokenOutput{
 		AccessToken:  accessToken.Token(),
 		TokenType:    "Bearer",
 		ExpiresIn:    int64(AccessTokenExpirationTime.Seconds()),
 		RefreshToken: refreshToken.Token(),
+		IDToken:      idTokenStr,
 	}, nil
 }

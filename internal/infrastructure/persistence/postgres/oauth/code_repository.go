@@ -16,6 +16,7 @@ type authorizationCodeModel struct {
 	UserID      uuid.UUID `db:"user_id"`
 	RedirectURI string    `db:"redirect_uri"`
 	State       string    `db:"state"`
+	Nonce       string    `db:"nonce"`
 	ExpiresAt   time.Time `db:"expires_at"`
 }
 
@@ -39,6 +40,7 @@ func (r *codeRepository) Save(ctx context.Context, code *oauth.AuthorizationCode
 		UserID:      code.UserID(),
 		RedirectURI: code.RedirectURI(),
 		State:       code.State(),
+		Nonce:       code.Nonce(),
 		ExpiresAt:   code.ExpiresAt(),
 	}
 
@@ -55,8 +57,8 @@ func (r *codeRepository) Save(ctx context.Context, code *oauth.AuthorizationCode
 	}
 
 	const query = `
-INSERT INTO authorization_codes (code, client_id, user_id, redirect_uri, state, expires_at)
-VALUES (:code, :client_id, :user_id, :redirect_uri, :state, :expires_at)
+INSERT INTO authorization_codes (code, client_id, user_id, redirect_uri, state, nonce, expires_at)
+VALUES (:code, :client_id, :user_id, :redirect_uri, :state, :nonce, :expires_at)
 `
 
 	// Bulk insert for scopes
@@ -85,7 +87,7 @@ VALUES (:code, :client_id, :user_id, :redirect_uri, :state, :expires_at)
 func (r *codeRepository) FindByCode(ctx context.Context, codeStr string) (*oauth.AuthorizationCode, error) {
 	var cm authorizationCodeModel
 	const query = `
-SELECT code, client_id, user_id, redirect_uri, state, expires_at
+SELECT code, client_id, user_id, redirect_uri, state, nonce, expires_at
 FROM authorization_codes
 WHERE code = $1
 `
@@ -114,6 +116,7 @@ WHERE code = $1
 		cm.RedirectURI,
 		scopes,
 		cm.State,
+		cm.Nonce,
 		cm.ExpiresAt,
 	), nil
 }

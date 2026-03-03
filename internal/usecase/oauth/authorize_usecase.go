@@ -60,6 +60,9 @@ type AuthorizeInput struct {
 	// [RFC 6749 Section 4.1 （B)] 対話によるユーザ認証の結果
 	UserID       string // 認証されたユーザの識別子
 	IsAuthorized bool   // ユーザがクライアントにアクセスを許可したかどうか
+
+	// OIDC 用
+	Nonce string // クライアントが生成したランダムな文字列で、リプレイ攻撃を防止するために使用される
 }
 
 type AuthorizeOutput struct {
@@ -119,6 +122,7 @@ func (i *authorizeInteractor) Execute(ctx context.Context, req AuthorizeInput) (
 		req.RedirectURI,
 		req.Scope,
 		req.State,
+		req.Nonce,
 		// 現時点から数分後に有効期限が切れるようにする
 		time.Now().Add(AuthorizeCodeExpirationTime),
 	)
