@@ -8,11 +8,17 @@ import (
 	"example.com/m/internal/infrastructure/env"
 	"example.com/m/internal/infrastructure/persistence/postgres"
 	"example.com/m/internal/infrastructure/persistence/postgres/auth"
+	"example.com/m/internal/infrastructure/persistence/postgres/oauth"
+	oauthRepoMem "example.com/m/internal/infrastructure/persistence/memory/oauth"
 	"example.com/m/internal/infrastructure/persistence/postgres/user"
-	authH "example.com/m/internal/interface/http/auth"
-	authUC "example.com/m/internal/usecase/auth"
-	userUC "example.com/m/internal/usecase/user"
+	hash "example.com/m/internal/infrastructure/security/bcrypt"
+	"example.com/m/internal/infrastructure/security/crypto"
 	webAdapter "example.com/m/internal/interface/http"
+	authH "example.com/m/internal/interface/http/auth"
+	oauthH "example.com/m/internal/interface/http/oauth"
+	authUC "example.com/m/internal/usecase/auth"
+	oauthUC "example.com/m/internal/usecase/oauth"
+	userUC "example.com/m/internal/usecase/user"
 	"github.com/gorilla/sessions"
 	"github.com/labstack/echo-contrib/session"
 	"github.com/labstack/echo/v4"
@@ -37,13 +43,24 @@ func main() {
 
 	userRepo := user.NewUserRepository(db)
 	authRepo := auth.NewCredentialRepository(db)
+	clientRepo := oauthRepoMem.NewClientRepository()
+	codeRepo := oauth.NewCodeRepository(db)
+	tokenRepo := oauth.NewTokenRepository(db)
 	passSvc := bcrypt.NewBCryptPasswordService()
+	clientHash := hash.NewSecretHashService()
+	codeGen := crypto.NewCodeGenerator()
+	codeValidator := crypto.NewCodeValidator()
+	tokenGen := crypto.NewTokenGenerator()
+	_ = crypto.NewTokenCredential()
 
 	issuerURL := env.GetString("ISSUER_URL", "http://127.0.0.2:8080")
 	aUC := authUC.NewAuthInteractor(userRepo, authRepo, passSvc, issuerURL)
 	uUC := userUC.NewUserInteractor(userRepo)
+	authorizeUC := oauthUC.NewAuthorizeInteractor(clientRepo, codeRepo, codeGen)
+	tokenUC := oauthUC.NewIssueTokenInteractor(clientRepo, codeRepo, tokenRepo, clientHash, tokenGen, codeValidator)
 
 	authHandler := authH.NewAuthHandler(aUC, uUC)
+	oauthHandler := oauthH.NewOauthHandler(authorizeUC, tokenUC)
 
 	e := echo.New()
 
@@ -56,7 +73,7 @@ func main() {
 		templates: template.Must(template.ParseGlob("web/templates/*.html")),
 	}
 
-	webAdapter.InitRoutes(e, authHandler)
+	webAdapter.InitRoutes(e, authHandler, oauthHandler)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
