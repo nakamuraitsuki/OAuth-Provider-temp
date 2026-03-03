@@ -29,6 +29,7 @@ type issueTokenInteractor struct {
 	tokenRepo  oauth.TokenRepository
 	hasher     oauth.SecretHashService
 	tokenGen   oauth.TokenGenerator
+	codeValidator oauth.CodeValidator
 }
 
 func NewIssueTokenInteractor(
@@ -37,6 +38,7 @@ func NewIssueTokenInteractor(
 	tokenRepo oauth.TokenRepository,
 	hasher oauth.SecretHashService,
 	tokenGen oauth.TokenGenerator,
+	codeValidator oauth.CodeValidator,
 ) IssueTokenUseCase {
 	return &issueTokenInteractor{
 		clientRepo: clientRepo,
@@ -44,6 +46,7 @@ func NewIssueTokenInteractor(
 		tokenRepo:  tokenRepo,
 		tokenGen:   tokenGen,
 		hasher:     hasher,
+		codeValidator: codeValidator,
 	}
 }
 
@@ -95,6 +98,9 @@ func (i *issueTokenInteractor) Execute(ctx context.Context, req IssueTokenInput)
 	authCode, err := i.codeRepo.FindByCode(ctx, req.Code)
 	if err != nil {
 		// ここで「もし削除済み（既に使用済み）なら関連トークンを Revoke する」ロジックを将来的に追加可能
+		return nil, ErrInvalidGrant
+	}
+  if err := i.codeValidator.Validate(ctx, req.Code, authCode); err != nil {
 		return nil, ErrInvalidGrant
 	}
 
