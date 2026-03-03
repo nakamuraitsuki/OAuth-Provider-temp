@@ -13,9 +13,12 @@ type IDToken struct {
 	
 	// CONDITIONALLY REQUIRED / OPTIONAL
 	Nonce string
+
+	Name string // optional claim: user's full name
+	// more claims can be added if needed
 }
 
-func NewIDToken(sub, aud, iss, nonce string, duration time.Duration) *IDToken {
+func NewIDToken(sub, aud, iss, nonce, name string, duration time.Duration) *IDToken {
 	now := time.Now()
 	return &IDToken{
 		Issuer: iss,
@@ -24,5 +27,6 @@ func NewIDToken(sub, aud, iss, nonce string, duration time.Duration) *IDToken {
 		ExpiresAt: now.Add(duration),
 		IssuedAt: now,
 		Nonce: nonce,
+		Name: name,
 	}
 }
