@@ -51,16 +51,17 @@ func main() {
 	codeGen := crypto.NewCodeGenerator()
 	codeValidator := crypto.NewCodeValidator()
 	tokenGen := crypto.NewTokenGenerator()
-	_ = crypto.NewTokenCredential()
+	tokenCredential := crypto.NewTokenCredential()
 
 	issuerURL := env.GetString("ISSUER_URL", "http://127.0.0.2:8080")
 	aUC := authUC.NewAuthInteractor(userRepo, authRepo, passSvc, issuerURL)
 	uUC := userUC.NewUserInteractor(userRepo)
 	authorizeUC := oauthUC.NewAuthorizeInteractor(clientRepo, codeRepo, codeGen)
 	tokenUC := oauthUC.NewIssueTokenInteractor(clientRepo, codeRepo, tokenRepo, clientHash, tokenGen, codeValidator)
+	refreshTokenUC := oauthUC.NewRefreshTokenInteractor(tokenRepo, tokenCredential, tokenGen)
 
 	authHandler := authH.NewAuthHandler(aUC, uUC)
-	oauthHandler := oauthH.NewOauthHandler(authorizeUC, tokenUC)
+	oauthHandler := oauthH.NewOauthHandler(authorizeUC, tokenUC, refreshTokenUC)
 
 	e := echo.New()
 
