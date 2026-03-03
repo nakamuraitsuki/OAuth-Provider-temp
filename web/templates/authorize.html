@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Authorize App | My OAuth Provider</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --danger: #ef4444;
+            --bg: #f1f5f9;
+        }
+
+        body {
+            font-family: system-ui, sans-serif;
+            background: var(--bg);
+            margin: 0;
+            padding: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 450px;
+            width: 100%;
+            background: white;
+            padding: 2rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .app-icon {
+            width: 64px;
+            height: 64px;
+            background: var(--primary);
+            color: white;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            margin: 0 auto 1rem;
+        }
+
+        .permission-list {
+            background: #f8fafc;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+
+        .permission-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            font-size: 0.95rem;
+            color: #334155;
+            margin-bottom: 0.5rem;
+        }
+
+        .permission-item:last-child { margin-bottom: 0; }
+
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .btn {
+            padding: 0.75rem;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            width: 100%;
+            font-size: 1rem;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover { opacity: 0.9; }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-ghost { background: transparent; color: #64748b; }
+
+        .footer {
+            margin-top: 1.5rem;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #94a3b8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="app-icon">{{slice .ClientID 0 1 | printf "%s"}}</div>
+            <h2 style="margin: 0.5rem 0;">認可リクエスト</h2>
+            <p style="color: #64748b; font-size: 0.9rem;">
+                <strong>{{.ClientID}}</strong> があなたのアカウントへのアクセスを求めています。
+            </p>
+        </div>
+
+        <form action="/oauth/authorize" method="POST">
+            <input type="hidden" name="response_type" value="{{.ResponseType}}">
+            <input type="hidden" name="client_id" value="{{.ClientID}}">
+            <input type="hidden" name="redirect_uri" value="{{.RedirectURI}}">
+            <input type="hidden" name="scope" value="{{range $i, $e := .Scope}}{{if $i}} {{end}}{{$e}}{{end}}">
+            <input type="hidden" name="nonce" value="{{.Nonce}}">
+            <input type="hidden" name="state" value="{{.State}}">
+
+            <div class="permission-list">
+                <p style="margin-top: 0; font-weight: bold; font-size: 0.85rem; color: #475569;">許可される権限:</p>
+                <div class="permission-item">
+                    <span>✅</span>
+                    <span>ユーザープロフィール（ID, 表示名）の参照</span>
+                </div>
+                {{if .Scope}}
+                <div class="permission-item">
+                    <span>✅</span>
+                    <span>スコープ: {{.Scope}}</span>
+                </div>
+                {{end}}
+            </div>
+
+            <div class="btn-group">
+                <button type="submit" name="action" value="approve" class="btn btn-primary">承認して連携する</button>
+                <button type="submit" name="action" value="deny" class="btn btn-ghost">キャンセル</button>
+            </div>
+        </form>
+
+        <div class="footer">
+            ログイン中のユーザー: <strong>{{.UserID}}</strong>
+        </div>
+    </div>
+</body>
+
+</html>
