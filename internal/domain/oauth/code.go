@@ -44,3 +44,4 @@ func (c *AuthorizationCode) UserID() uuid.UUID   { return c.userID }
 func (c *AuthorizationCode) RedirectURI() string { return c.redirectURI }
 func (c *AuthorizationCode) Scope() []string     { return c.scope }
 func (c *AuthorizationCode) State() string       { return c.state }
+func (c *AuthorizationCode) ExpiresAt() time.Time { return c.expiresAt }
