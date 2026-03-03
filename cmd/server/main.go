@@ -16,6 +16,7 @@ import (
 	webAdapter "example.com/m/internal/interface/http"
 	authH "example.com/m/internal/interface/http/auth"
 	oauthH "example.com/m/internal/interface/http/oauth"
+	userH "example.com/m/internal/interface/http/user"
 	authUC "example.com/m/internal/usecase/auth"
 	oauthUC "example.com/m/internal/usecase/oauth"
 	userUC "example.com/m/internal/usecase/user"
@@ -59,9 +60,11 @@ func main() {
 	authorizeUC := oauthUC.NewAuthorizeInteractor(clientRepo, codeRepo, codeGen)
 	tokenUC := oauthUC.NewIssueTokenInteractor(clientRepo, codeRepo, tokenRepo, clientHash, tokenGen, codeValidator)
 	refreshTokenUC := oauthUC.NewRefreshTokenInteractor(tokenRepo, tokenCredential, tokenGen)
+	verifyTokenUC := oauthUC.NewVerifyTokenUseCase(tokenRepo, tokenCredential)
 
 	authHandler := authH.NewAuthHandler(aUC, uUC)
 	oauthHandler := oauthH.NewOauthHandler(authorizeUC, tokenUC, refreshTokenUC)
+	userHandler := userH.NewUserHandler(uUC, verifyTokenUC)
 
 	e := echo.New()
 
@@ -74,7 +77,7 @@ func main() {
 		templates: template.Must(template.ParseGlob("web/templates/*.html")),
 	}
 
-	webAdapter.InitRoutes(e, authHandler, oauthHandler)
+	webAdapter.InitRoutes(e, authHandler, oauthHandler, userHandler)
 
 	e.Logger.Fatal(e.Start(":8080"))
 }
