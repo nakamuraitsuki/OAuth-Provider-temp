@@ -15,10 +15,12 @@ func (h *OauthHandler) TokenEndpoint(c echo.Context) error {
 	// DTO タグは form が適切
 	var req struct {
 		GrantType    string `form:"grant_type"`
+		RefreshToken string `form:"refresh_token"` // [RFC6749 6] Refresh Token Grant より
 		Code         string `form:"code"`
 		RedirectURI  string `form:"redirect_uri"`
 		ClientID     string `form:"client_id"`
 		ClientSecret string `form:"client_secret"`
+		Scope        string `form:"scope"` // [RFC6749 6] Refresh Token Grant より
 	}
 	if err := c.Bind(&req); err != nil {
 		return sendError(c, http.StatusBadRequest, "invalid_request")
@@ -41,6 +43,27 @@ func (h *OauthHandler) TokenEndpoint(c echo.Context) error {
 	} else {
 		finalClientID = req.ClientID
 		finalClientSecret = req.ClientSecret
+	}
+
+	if req.GrantType == "refresh_token" {
+		// [RFC6749 6] Refresh Token Grant より
+		if req.RefreshToken == "" {
+			return sendError(c, http.StatusBadRequest, "invalid_request")
+		}
+		input := oauth.RefreshTokenInput{
+			RefreshToken: req.RefreshToken,
+			Scope:        req.Scope,
+		}
+		output, err := h.refreshTokenUseCase.Execute(c.Request().Context(), input)
+		if err != nil {
+			switch err {
+			case oauth.ErrInvalidToken:
+				return sendError(c, http.StatusBadRequest, "invalid_grant")
+			default:
+				return sendError(c, http.StatusInternalServerError, "server_error")
+			}
+		}
+		return c.JSON(http.StatusOK, output)
 	}
 
 	input := oauth.IssueTokenInput{
