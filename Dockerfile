@@ -12,9 +12,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
 
 # Runtime Stage
 FROM alpine:3.19
+RUN apk add --no-cache bash openssl
 WORKDIR /app
-COPY --from=builder /app/web ./web
+COPY ./web ./web
+COPY scripts/gen-keys.sh ./scripts/gen-keys.sh
+RUN chmod +x ./scripts/gen-keys.sh
 COPY --from=builder /app-http .
 RUN chmod +x ./app-http
 
-ENTRYPOINT [ "./app-http" ]
+ENTRYPOINT [ "/bin/sh", "-c", "./scripts/gen-keys.sh && ./app-http" ]

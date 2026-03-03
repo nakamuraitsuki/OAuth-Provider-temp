@@ -46,7 +46,7 @@ func main() {
 	defer db.Close()
 
 	issuerURL := env.GetString("ISSUER_URL", "http://127.0.0.2:8080")
-	jwtSecret, err := jw.LoadPrivateKey("creds/private.pem")
+	jwtSecret, err := jw.LoadPrivateKey("certs/private.pem")
 	if err != nil {
 		panic(err)
 	}

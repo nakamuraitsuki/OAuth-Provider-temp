@@ -1,11 +1,14 @@
 services:
-  app:
+  oauth:
     build: .
+    volumes:
+      - ./certs:/app/certs
     ports:
-      - "127.0.0.2:8080:8080"
+      - "0.0.0.0:8080:8080"
+    container_name: oauth-provider
     environment:
       - ADDRESS=0.0.0.0:8080
-      - ISSUER_URL=http://127.0.0.2:8080
+      - ISSUER_URL=http://oauth.local:8080
       - DB_HOST=postgres
       - DB_PORT=5432
       - DB_USER=postgres
@@ -17,7 +20,10 @@ services:
       postgres:
         condition: service_healthy
     networks:
-      - internal
+      internal:
+      auth-common:
+        aliases:
+          - oauth.local
 
   postgres:
     image: postgres:16-alpine
@@ -40,6 +46,9 @@ services:
 networks:
   internal:
     driver: bridge
+  auth-common:
+    external: true
+    name: auth-common-net
 
 volumes:
   pgdata:

@@ -16,26 +16,25 @@ func LoadPrivateKey(path string) (*rsa.PrivateKey, error) {
 	}
 
 	block, _ := pem.Decode(data)
-	if block == nil || block.Type != "RSA PRIVATE KEY" {
-		// PKCS#8 形式などの可能性もあるため、適宜拡張が必要
-		return nil, errors.New("failed to decode PEM block containing RSA private key")
+	if block == nil {
+		return nil, errors.New("failed to decode PEM block")
 	}
 
 	key, err := x509.ParsePKCS1PrivateKey(block.Bytes)
-	if err != nil {
-		// PKCS#1 でダメなら PKCS#8 を試す
-		pkcs8Key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse private key: %w", err)
-		}
+	if err == nil {
+		return key, nil
+	}
+
+	pkcs8Key, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err == nil {
 		rsaKey, ok := pkcs8Key.(*rsa.PrivateKey)
 		if !ok {
 			return nil, errors.New("not an RSA private key")
 		}
 		return rsaKey, nil
 	}
-	
-	return key, nil
+
+	return nil, errors.New("failed to parse private key in both PKCS#1 and PKCS#8 formats")
 }
 
 func GenerateKID(key *rsa.PrivateKey) (string, error) {
