@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"example.com/m/internal/domain/oauth"
+	"example.com/m/internal/domain/oauth/value"
 	"github.com/google/uuid"
 )
 
@@ -15,7 +16,10 @@ var staticClients = map[uuid.UUID]*oauth.Client{
 		"$2y$05$vFR41M6J4zMSI4FURvDjsOXWHK22cKzxwjk84W/qD75aJMzzuyiqC", // secret
 		oauth.ClientTypeConfidential,
 		[]string{"http://..."},
-		[]string{"profile:read"},
+		[]string{
+			value.ScopeProfileRead,
+			value.ScopeOpenID,
+		},
 	),
 }
 
@@ -28,7 +32,7 @@ func NewClientRepository() oauth.ClientRepository {
 func (r *clientRepository) FindByID(ctx context.Context, id uuid.UUID) (*oauth.Client, error) {
 	client, exists := staticClients[id]
 	if !exists {
-		return nil, nil // Not found	
+		return nil, nil // Not found
 	}
 	return client, nil
 }
