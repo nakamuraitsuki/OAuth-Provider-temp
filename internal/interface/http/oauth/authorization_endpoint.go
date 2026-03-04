@@ -22,10 +22,10 @@ func (h *OauthHandler) AuthorizationGETEndpoint(c echo.Context) error {
 
 	// RFC: 認可サーバはまずソースオーナを認証しなくてはならない
 	if !ok || userID == "" {
-		// 一時リダイレクトとしてログインページにリダイレクトする
-		return c.Redirect(http.StatusSeeOther, "/login?return_to="+c.Request().URL.String())
+		// url.QueryEscape を使わないと、URLが壊れてループします
+		returnTo := url.QueryEscape(c.Request().URL.String())
+		return c.Redirect(http.StatusSeeOther, "/login?return_to="+returnTo)
 	}
-
 	// [RFC6749 3.1.2] Authorization Request より
 	// query component でRequestは来るはずで、query を抽出するのが適切
 
@@ -76,6 +76,7 @@ func (h *OauthHandler) AuthorizationPOSTEndpoint(c echo.Context) error {
 		RedirectURI  string `form:"redirect_uri"`
 		Scope        string `form:"scope"`
 		State        string `form:"state"`
+		Nonce        string `form:"nonce"`
 		Action       string `form:"action"` // "approve" or "deny"
 	}
 	if err := c.Bind(&req); err != nil {
@@ -89,6 +90,7 @@ func (h *OauthHandler) AuthorizationPOSTEndpoint(c echo.Context) error {
 		Scope:        strings.Fields(req.Scope),
 		State:        req.State,
 		UserID:       userID,
+		Nonce:        req.Nonce,
 		IsAuthorized: req.Action == "approve",
 	}
 

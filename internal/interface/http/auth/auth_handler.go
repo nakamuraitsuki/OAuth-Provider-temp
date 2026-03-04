@@ -58,8 +58,10 @@ func (h *AuthHandler) Register(c echo.Context) error {
 
 // ShowLogin: GET /login
 func (h *AuthHandler) ShowLogin(c echo.Context) error {
+	returnTo := c.QueryParam("return_to")
 	return c.Render(http.StatusOK, "login.html", map[string]interface{}{
 		"Issuer": h.authUC.GetIssuer(),
+		"ReturnTo": returnTo,
 	})
 }
 
@@ -93,17 +95,21 @@ func (h *AuthHandler) Login(c echo.Context) error {
 		return err
 	}
 
-	return c.Redirect(http.StatusSeeOther, "/dashboard")
+	returnTo := c.QueryParam("return_to")
+	if returnTo == "" {
+		returnTo = "/dashboard"
+	}
+	return c.Redirect(http.StatusSeeOther, returnTo)
 }
 
 // Logout: POST /logout
 func (h *AuthHandler) Logout(c echo.Context) error {
 	sess, _ := session.Get("session", c)
-	
+
 	// セッションの中身を空にする、あるいはオプションで有効期限をマイナスにする
 	sess.Options.MaxAge = -1
 	sess.Values = make(map[interface{}]interface{})
-	
+
 	if err := sess.Save(c.Request(), c.Response()); err != nil {
 		return echo.NewHTTPError(http.StatusInternalServerError, "Failed to logout")
 	}
